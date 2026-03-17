@@ -1,0 +1,65 @@
+{
+  "name": "cursor-usage",
+  "displayName": "Cursor Usage",
+  "description": "Track Cursor API request usage from status bar with auto-detected auth",
+  "version": "1.1.0",
+  "publisher": "cursor-usage",
+  "engines": {
+    "vscode": "^1.73.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cursor-usage.setToken",
+        "title": "Cursor Usage: Set Session Token"
+      },
+      {
+        "command": "cursor-usage.clearToken",
+        "title": "Cursor Usage: Clear Session Token"
+      },
+      {
+        "command": "cursor-usage.refresh",
+        "title": "Cursor Usage: Refresh"
+      }
+    ],
+    "configuration": {
+      "title": "Cursor Usage",
+      "properties": {
+        "cursorUsage.sessionToken": {
+          "type": "string",
+          "default": "",
+          "description": "WorkosCursorSessionToken value. Leave empty to use auto-detection from Cursor's local database."
+        },
+        "cursorUsage.autoDetectToken": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect session token from Cursor's local SQLite database (requires sqlite3 CLI)."
+        },
+        "cursorUsage.refreshIntervalMinutes": {
+          "type": "number",
+          "default": 15,
+          "minimum": 1,
+          "description": "How often to auto-refresh usage (in minutes)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cursor",
+    "usage",
+    "tracking",
+    "status-bar"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -315,7 +315,16 @@ function activate(context) {
 		});
 
 		if (input !== undefined) {
-			const cleaned = input.replace(/^WorkosCursorSessionToken=/, '').trim();
+			let cleaned = input.replace(/^WorkosCursorSessionToken=/, '').trim();
+			
+			// If the user pasted the full cookie value containing the user ID prefix (e.g. user_123::eyJ... or user_123%3A%3AeyJ...)
+			// we need to extract just the JWT part.
+			if (cleaned.includes('%3A%3A')) {
+				cleaned = cleaned.split('%3A%3A')[1];
+			} else if (cleaned.includes('::')) {
+				cleaned = cleaned.split('::')[1];
+			}
+
 			await setSessionToken(cleaned);
 			vscode.window.showInformationMessage('Session token saved');
 			updateStatusBar();

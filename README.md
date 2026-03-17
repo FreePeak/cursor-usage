@@ -74,3 +74,20 @@ If auto-detection fails:
 - **"Auth failed"**: Token expired. Clear the saved token to re-trigger auto-detect, or set a new one manually.
 - **"Error"**: Hover over the status bar item to see the error details.
 - **Auto-detect not working**: Ensure Cursor is installed and you've logged in at least once. Run `sqlite3 ~/Library/Application\ Support/Cursor/User/globalStorage/state.vscdb "SELECT key FROM ItemTable WHERE key LIKE 'cursorAuth%'"` to verify the database has auth keys.
+
+```
+To get this exact JWT value from your browser, follow these steps:
+Open cursor.com in your browser and ensure you are logged in.
+Open the browser's Developer Tools (Right-click anywhere on the page -> Inspect, or press Cmd+Option+I on Mac).
+Go to the Application tab (in Chrome/Edge) or Storage tab (in Firefox).
+In the left sidebar, expand Cookies and click on https://cursor.com.
+Find the cookie named WorkosCursorSessionToken.
+Look at the Value column for that cookie.
+The value you see will look something like this: user_01K7BWSY6BKPK3ARXFPDCQGHS5%3A%3AeyJhbGciOiJIUzI1NiIs...
+
+The JWT value is everything after the %3A%3A (or :: if your browser decodes it).
+
+So, you just copy the part that starts with eyJ all the way to the end.
+
+(Note: If you are using the updated extension code I just provided, you can actually copy the entire value including the user_... part, and the extension will automatically extract the eyJ... part for you!)
+```

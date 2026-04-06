@@ -1,0 +1,54 @@
+name: Publish to Open VSX
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install ovsx
+        run: npm install -g ovsx
+
+      - name: Get version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Get version from package.json
+        if: env.VERSION == ''
+        run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
+
+      - name: Package extension
+        run: npx ovsx package -p $VERSION
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+        run: npx ovsx publish --token $OVSX_TOKEN
+
+      - name: Publish to VS Code Marketplace
+        if: false
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+        run: |
+          # Only publish to Microsoft if explicitly enabled
+          echo "VS Code Marketplace publishing disabled"

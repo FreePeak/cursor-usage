@@ -39,6 +39,56 @@ function getCursorDbPath() {
 	}
 }
 
+function getChromeCookiePath() {
+	const home = os.homedir();
+	switch (process.platform) {
+		case 'darwin':
+			return path.join(home, 'Library', 'Application Support', 'Google', 'Chrome', 'Default', 'Cookies');
+		case 'linux':
+			return path.join(home, '.config', 'google-chrome', 'Default', 'Cookies');
+		case 'win32':
+			return path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'User Data', 'Default', 'Cookies');
+		default:
+			return '';
+	}
+}
+
+function getEdgeCookiePath() {
+	const home = os.homedir();
+	switch (process.platform) {
+		case 'darwin':
+			return path.join(home, 'Library', 'Application Support', 'Microsoft Edge', 'Default', 'Cookies');
+		case 'linux':
+			return path.join(home, '.config', 'microsoft-edge', 'Default', 'Cookies');
+		case 'win32':
+			return path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'Edge', 'User Data', 'Default', 'Cookies');
+		default:
+			return '';
+	}
+}
+
+function tryExtractFromBrowserCookies() {
+	return new Promise((resolve) => {
+		const cookiePaths = [
+			{ name: 'Chrome', path: getChromeCookiePath() },
+			{ name: 'Edge', path: getEdgeCookiePath() },
+		];
+
+		for (const browser of cookiePaths) {
+			if (browser.path) {
+				try {
+					if (require('fs').existsSync(browser.path)) {
+						console.log(`[Cursor Usage] Found ${browser.name} cookie database at ${browser.path}`);
+					}
+				} catch (e) {
+				}
+			}
+		}
+
+		resolve(null);
+	});
+}
+
 function decodeJwtPayload(jwt) {
 	const parts = jwt.split('.');
 	if (parts.length !== 3) {
@@ -72,14 +122,14 @@ function extractTokenFromDb() {
 		const query = "SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'";
 		execFile('sqlite3', [dbPath, query], { timeout: 5000 }, (err, stdout) => {
 			if (err) {
-				reject(new Error(`sqlite3 failed: ${err.message}. Install sqlite3 or set token manually.`));
+				reject(new Error(`sqlite3 error: ${err.message}. Make sure sqlite3 is installed (brew install sqlite3 on macOS) or set token manually via "Cursor Usage: Set Session Token" command.`));
 				return;
 			}
 			const token = stdout.trim();
 			if (token) {
 				resolve(token);
 			} else {
-				reject(new Error('No auth token found in Cursor database'));
+				reject(new Error('No token in Cursor database. Open cursor.com, login, then restart Cursor. Or use "Cursor Usage: Set Session Token" to enter manually.'));
 			}
 		});
 	});
@@ -261,9 +311,18 @@ async function updateStatusBar() {
 			}
 
 			tooltipLines.push('--- Request Usage ---');
+			const now = new Date();
+			const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+			const daysLeftInMonth = lastDayOfMonth - now.getDate() + 1;
 			for (const [model, info] of Object.entries(u.models)) {
-				const limit = info.maxRequestUsage != null ? `/${info.maxRequestUsage}` : '';
-				tooltipLines.push(`  ${model}: ${info.numRequests}${limit} reqs`);
+				if (model === 'gpt-4' && info.maxRequestUsage != null) {
+					const remaining = info.maxRequestUsage - info.numRequests;
+					const avgPerDay = daysLeftInMonth > 0 ? (remaining / daysLeftInMonth).toFixed(1) : 0;
+					tooltipLines.push(`  ${model}: Remaining ${remaining} reqs (avg ${avgPerDay}/day)`);
+				} else {
+					const limit = info.maxRequestUsage != null ? `/${info.maxRequestUsage}` : '';
+					tooltipLines.push(`  ${model}: ${info.numRequests}${limit} reqs`);
+				}
 			}
 			if (u.startOfMonth) {
 				tooltipLines.push(`  Billing cycle start: ${new Date(u.startOfMonth).toLocaleDateString()}`);
